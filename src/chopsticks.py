@@ -26,6 +26,7 @@ tlsKey = os.environ.get("FLASK_TLS_KEY", "")
 # Chopsticks Variables
 endpointMode = os.environ.get('CHOPSTICKS_ENDPOINT_MODE', 'path') # path, wildcard, or subdirectory
 sushyToolsEndpoint = os.environ.get('SUSHY_TOOLS_ENDPOINT', 'http://sushy-tools.example.com:8111') # Default Sushy-tools endpoint
+libvirtEndpoint = os.environ.get('LIBVIRT_ENDPOINT', 'qemu:///system')
 
 ##############################
 # System Defaults
@@ -82,7 +83,7 @@ def entrypoint(route):
         if path.strip("/") in ["redfish", "redfish/v1", "redfish/v1/Systems", "redfish/v1/Managers", "redfish/v1/Chassis"]:
             req = proxyRequest(sushyToolsEndpoint + "/" + path, requestMethod)
             sushyTransaction = sushyToolsReturnFilter(req, vmUUID, vmUUIDReplacement)
-            return sushyTransaction, req.status_code
+            return jsonify(json.loads(sushyTransaction)), req.status_code
             #return req.content, req.status_code
         else:
             newPath = '/'.join(path.split('/')[0:3]) + '/' + vmUUID + '/' + '/'.join(path.split('/')[5:])
@@ -90,7 +91,7 @@ def entrypoint(route):
 
         sushyRequest = proxyRequest(sushyToolsServer, requestMethod)
         sushyTransaction = sushyToolsReturnFilter(sushyRequest, vmUUID, vmUUIDReplacement)
-        return sushyTransaction, sushyRequest.status_code
+        return jsonify(json.loads(sushyTransaction)), sushyRequest.status_code
 
     # Subdirectory Mode - chopsticks.example.com/vm-name/redfish/v1/...
     elif endpointMode == "subdirectory":
@@ -108,14 +109,14 @@ def entrypoint(route):
         if remainingPath.strip("/") in ["redfish", "redfish/v1", "redfish/v1/Systems", "redfish/v1/Managers", "redfish/v1/Chassis"]:
             req = proxyRequest(sushyToolsEndpoint + "/" + remainingPath, requestMethod)
             sushyTransaction = sushyToolsReturnFilterSubdir(req, vmUUID, vmUUIDReplacement, targetVM)
-            return sushyTransaction, req.status_code
+            return jsonify(json.loads(sushyTransaction)), req.status_code
         else:
             newPath = '/'.join(path.split('/')[1:4]) + '/' + vmUUID + '/' + '/'.join(path.split('/')[5:])
             sushyToolsServer = f"{sushyToolsEndpoint}/{newPath}"
 
         sushyRequest = proxyRequest(sushyToolsServer, requestMethod)
         sushyTransaction = sushyToolsReturnFilterSubdir(sushyRequest, vmUUID, vmUUIDReplacement, targetVM)
-        return sushyTransaction, sushyRequest.status_code
+        return jsonify(json.loads(sushyTransaction)), sushyRequest.status_code
 
     elif endpointMode == "path":
         # Path mode - chopsticks.example.com/redfish/v1/{Systems,Managers,Chassis}/vm-name/...
@@ -130,7 +131,7 @@ def entrypoint(route):
             if path.strip("/") in ["redfish", "redfish/v1", "redfish/v1/Systems", "redfish/v1/Managers", "redfish/v1/Chassis"]:
                 req = proxyRequest(sushyToolsEndpoint + "/" + path, requestMethod)
                 sushyTransaction = vmUUIDListingFilter(req)
-                return sushyTransaction, req.status_code
+                return jsonify(json.loads(sushyTransaction)), req.status_code
             return f"Target VM {targetVM} not found in list of VMs: {getLibvirtVMs()}", 404
 
         vmUUID = vmInfo['uuid']
@@ -140,7 +141,7 @@ def entrypoint(route):
 
         sushyRequest = proxyRequest(sushyToolsServer, requestMethod)
         sushyTransaction = sushyToolsReturnFilter(sushyRequest, vmUUID, vmUUIDReplacement)
-        return sushyTransaction, sushyRequest.status_code
+        return jsonify(json.loads(sushyTransaction)), sushyRequest.status_code
 
     else:
         # Invalid endpoint mode
@@ -200,7 +201,8 @@ def proxyRequest(sushyToolsServer, requestMethod):
 # This function returns a list of VMs with their names, UUIDs, and states
 def getLibvirtVMs():    
     try:
-        conn = libvirt.openReadOnly(None)
+        #conn = libvirt.openReadOnly(None)
+        conn = libvirt.openReadOnly(libvirtEndpoint)
         createdOffVMs = conn.listDefinedDomains()
         vms = []
         for name in createdOffVMs:

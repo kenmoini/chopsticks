@@ -47,7 +47,10 @@ podman run --rm -d --name chopsticks \
  -e SUSHY_TOOLS_ENDPOINT="http://sushy-tools.example.com:8111" \
  -e FLASK_RUN_PORT=3434 \
  -e CHOPSTICKS_ENDPOINT_MODE=path \
- -p 3434/tcp \
+ -p 3434:3434/tcp \
  -v /var/run/libvirt:/var/run/libvirt:ro \
+ --user 0 \
  quay.io/kenmoini/chopsticks:latest
 ```
+
+Yes, the container needs to be run as a root user - socket things.  Could probably be bypassed with a `qemu+ssh` connection.
