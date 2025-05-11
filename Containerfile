@@ -7,7 +7,7 @@ WORKDIR /opt/app-root/src
 COPY ./src /opt/app-root/src
 
 RUN dnf update -y \
- && dnf install -y python3 python3-pip openssl \
+ && dnf install -y python3 python3-pip python3-requests python3-libvirt openssl \
  && dnf clean all \
  && rm -rf /var/cache/yum \
  && mkdir -p /opt/app-root/src \
