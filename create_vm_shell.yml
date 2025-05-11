@@ -1,0 +1,42 @@
+---
+- name: Create some Libvirt VM Shells
+  hosts: all
+
+  vars:
+    templatingPath: /tmp/vms
+
+    vms:
+      - name: vbmh-user1-w1
+        cpus: 4
+        memory: 8
+        disks:
+          - name: boot
+            size: 100
+        networks:
+          - name: bridge0
+      - name: vbmh-user1-w2
+        cpus: 4
+        memory: 8
+        disks:
+          - name: boot
+            size: 100
+        networks:
+          - name: bridge0
+
+    vm_architecture: x86_64
+    libvirt_host_os: fedora
+    libvirt_firmware_mode: uefi
+
+  tasks:
+    - name: Create the templatingPath
+      ansible.builtin.file:
+        path: "{{ templatingPath }}"
+        state: directory
+
+    - name: Template the VM XML
+      ansible.builtin.template:
+        src: templates/vm.xml.j2
+        dest: "{{ templatingPath }}/{{ v_item.name }}.xml"
+      loop: "{{ vms }}"
+      loop_control:
+        loop_var: v_item
