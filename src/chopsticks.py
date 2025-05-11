@@ -35,7 +35,7 @@ managerPath = os.environ.get('MANAGER_PATH', '/redfish/v1/Managers/') # Default 
 chassisPath = os.environ.get('CHASSIS_PATH', '/redfish/v1/Chassis/') # Default chassis path
 idNumber = os.environ.get('ID_NUMBER', '1') # Default ID number
 
-redfishDefaultProxyPaths = ["redfish", "redfish/v1", "redfish/v1/Systems", "redfish/v1/Managers", "redfish/v1/Chassis", "redfish/v1/SessionService", "redfish/v1/SessionService/Sessions", "redfish/v1/Registries", "redfish/v1/Registries/Messages", "redfish/v1/UpdateService", "redfish/v1/CertificateService"]
+redfishDefaultProxyPaths = ["redfish", "redfish/v1", "redfish/v1/Systems", "redfish/v1/Managers", "redfish/v1/Chassis", "redfish/v1/SessionService", "redfish/v1/SessionService/Sessions", "redfish/v1/Registries", "redfish/v1/Registries/Messages", "redfish/v1/Registries/BiosAttributeRegistry.v1_0_0", "redfish/v1/UpdateService", "redfish/v1/UpdateService/SoftwareInventory", "redfish/v1/UpdateService/FirmwareInventory", "redfish/v1/CertificateService", "redfish/v1/CertificateService/CertificateLocations"]
 
 ##############################
 # creates a Flask application
