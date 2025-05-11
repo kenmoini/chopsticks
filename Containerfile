@@ -7,6 +7,8 @@ WORKDIR /opt/app-root/src
 COPY ./src /opt/app-root/src
 
 RUN dnf update -y \
+ && dnf clean all \
+ && rm -rf /var/cache/yum \
  && dnf install -y python3 python3-pip openssl \
  && mkdir -p /opt/app-root/src \
  && pip3 install -r /opt/app-root/src/requirements.txt \
