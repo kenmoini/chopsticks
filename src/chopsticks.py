@@ -16,7 +16,7 @@ import os
 
 ##############################
 # Setup Flask Variables
-flaskDebug = os.environ.get("FLASH_DEBUG", False)
+flaskDebug = os.environ.get("FLASK_DEBUG", False)
 flaskPort = os.environ.get("FLASK_RUN_PORT", 3434)
 flaskHost = os.environ.get("FLASK_RUN_HOST", "0.0.0.0")
 tlsCert = os.environ.get("FLASK_TLS_CERT", "")
@@ -35,7 +35,7 @@ managerPath = os.environ.get('MANAGER_PATH', '/redfish/v1/Managers/') # Default 
 chassisPath = os.environ.get('CHASSIS_PATH', '/redfish/v1/Chassis/') # Default chassis path
 idNumber = os.environ.get('ID_NUMBER', '1') # Default ID number
 
-redfishDefaultProxyPaths = ["redfish", "redfish/v1", "redfish/v1/Systems", "redfish/v1/Managers", "redfish/v1/Chassis", "redfish/v1/SessionService", "redfish/v1/SessionService/Sessions", "redfish/v1/Registries"]
+redfishDefaultProxyPaths = ["redfish", "redfish/v1", "redfish/v1/Systems", "redfish/v1/Managers", "redfish/v1/Chassis", "redfish/v1/SessionService", "redfish/v1/SessionService/Sessions", "redfish/v1/Registries", "redfish/v1/Registries/Messages", "redfish/v1/UpdateService", "redfish/v1/CertificateService"]
 
 ##############################
 # creates a Flask application
@@ -57,7 +57,7 @@ def healthz():
 
 ####################################################################################################
 # Chopsticks Entrypoint
-@app.route("/<path:route>")
+@app.route("/<path:route>", methods=['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'])
 def entrypoint(route):
     # Parse the request URL
     url = urlparse(request.base_url)
@@ -83,7 +83,7 @@ def entrypoint(route):
         # If we're not really doing anything then just proxy the request
         # Proxy base request
         if path.strip("/") in redfishDefaultProxyPaths:
-            req = proxyRequest(sushyToolsEndpoint + "/" + path, requestMethod)
+            req = proxyRequest(sushyToolsEndpoint + "/" + path, request)
             sushyTransaction = sushyToolsReturnFilter(req, vmUUID, vmUUIDReplacement)
             return jsonify(json.loads(sushyTransaction)), req.status_code
             #return req.content, req.status_code
@@ -91,9 +91,12 @@ def entrypoint(route):
             newPath = '/'.join(path.split('/')[0:3]) + '/' + vmUUID + '/' + '/'.join(path.split('/')[5:])
             sushyToolsServer = f"{sushyToolsEndpoint}/{newPath}"
 
-        sushyRequest = proxyRequest(sushyToolsServer, requestMethod)
-        sushyTransaction = sushyToolsReturnFilter(sushyRequest, vmUUID, vmUUIDReplacement)
-        return jsonify(json.loads(sushyTransaction)), sushyRequest.status_code
+        sushyRequest = proxyRequest(sushyToolsServer, request)
+        if requestMethod == "GET":
+            sushyTransaction = sushyToolsReturnFilter(sushyRequest, vmUUID, vmUUIDReplacement)
+            return jsonify(json.loads(sushyTransaction)), sushyRequest.status_code
+        else:
+            return jsonify({}), sushyRequest.status_code
 
     # Subdirectory Mode - chopsticks.example.com/vm-name/redfish/v1/...
     elif endpointMode == "subdirectory":
@@ -109,16 +112,19 @@ def entrypoint(route):
         remainingPath = path.split('/')[1:] if len(path.split('/')) > 1 else None
         remainingPath = '/'.join(remainingPath)
         if remainingPath.strip("/") in redfishDefaultProxyPaths:
-            req = proxyRequest(sushyToolsEndpoint + "/" + remainingPath, requestMethod)
+            req = proxyRequest(sushyToolsEndpoint + "/" + remainingPath, request)
             sushyTransaction = sushyToolsReturnFilterSubdir(req, vmUUID, vmUUIDReplacement, targetVM)
             return jsonify(json.loads(sushyTransaction)), req.status_code
         else:
             newPath = '/'.join(path.split('/')[1:4]) + '/' + vmUUID + '/' + '/'.join(path.split('/')[5:])
             sushyToolsServer = f"{sushyToolsEndpoint}/{newPath}"
 
-        sushyRequest = proxyRequest(sushyToolsServer, requestMethod)
-        sushyTransaction = sushyToolsReturnFilterSubdir(sushyRequest, vmUUID, vmUUIDReplacement, targetVM)
-        return jsonify(json.loads(sushyTransaction)), sushyRequest.status_code
+        sushyRequest = proxyRequest(sushyToolsServer, request)
+        if requestMethod == "GET":
+            sushyTransaction = sushyToolsReturnFilterSubdir(sushyRequest, vmUUID, vmUUIDReplacement, targetVM)
+            return jsonify(json.loads(sushyTransaction)), sushyRequest.status_code
+        else:
+            return jsonify({}), sushyRequest.status_code
 
     elif endpointMode == "path":
         # Path mode - chopsticks.example.com/redfish/v1/{Systems,Managers,Chassis}/vm-name/...
@@ -131,7 +137,7 @@ def entrypoint(route):
         vmInfo = getVMFromName(targetVM)
         if vmInfo is None:
             if path.strip("/") in redfishDefaultProxyPaths:
-                req = proxyRequest(sushyToolsEndpoint + "/" + path, requestMethod)
+                req = proxyRequest(sushyToolsEndpoint + "/" + path, request)
                 sushyTransaction = vmUUIDListingFilter(req)
                 return jsonify(json.loads(sushyTransaction)), req.status_code
             return f"Target VM {targetVM} not found in list of VMs: {getLibvirtVMs()}", 404
@@ -141,9 +147,12 @@ def entrypoint(route):
         vmUUIDReplacement = targetVM
         sushyToolsServer = f"{sushyToolsEndpoint}/{newPath}"
 
-        sushyRequest = proxyRequest(sushyToolsServer, requestMethod)
-        sushyTransaction = sushyToolsReturnFilter(sushyRequest, vmUUID, vmUUIDReplacement)
-        return jsonify(json.loads(sushyTransaction)), sushyRequest.status_code
+        sushyRequest = proxyRequest(sushyToolsServer, request)
+        if requestMethod == "GET":
+            sushyTransaction = sushyToolsReturnFilter(sushyRequest, vmUUID, vmUUIDReplacement)
+            return jsonify(json.loads(sushyTransaction)), sushyRequest.status_code
+        else:
+            return jsonify({}), sushyRequest.status_code
 
     else:
         # Invalid endpoint mode
@@ -167,7 +176,8 @@ def getVMFromName(targetVM):
 
 ####################################################################################################
 # This function proxies the request to the Sushy-tools server
-def proxyRequest(sushyToolsServer, requestMethod):
+def proxyRequest(sushyToolsServer, req):
+    requestMethod = req.method
     # Make a request to the sushyToolsServer
     match requestMethod:
         case 'GET':
@@ -175,16 +185,16 @@ def proxyRequest(sushyToolsServer, requestMethod):
             sushyRequest = requests.get(sushyToolsServer)
         case 'POST':
             # Handle POST request
-            sushyRequest = requests.post(sushyToolsServer, data=request.data)
+            sushyRequest = requests.post(sushyToolsServer, json=req.json)
         case 'PUT':
             # Handle PUT request
-            sushyRequest = requests.put(sushyToolsServer, data=request.data)
+            sushyRequest = requests.put(sushyToolsServer, json=req.json)
         case 'DELETE':
             # Handle DELETE request
             sushyRequest = requests.delete(sushyToolsServer)
         case 'PATCH':
             # Handle PATCH request
-            sushyRequest = requests.patch(sushyToolsServer, data=request.data)
+            sushyRequest = requests.patch(sushyToolsServer, json=req.json)
         case 'OPTIONS':
             # Handle OPTIONS request
             sushyRequest = requests.options(sushyToolsServer)
