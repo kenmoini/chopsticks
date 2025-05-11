@@ -14,8 +14,8 @@
       <libosinfo:os id="http://fedoraproject.org/coreos/stable"/>
     </libosinfo:libosinfo>
   </metadata>
-  <memory unit='MiB'>{{ v_item.memory }}</memory>
-  <currentMemory unit='MiB'>{{ v_item.memory }}</currentMemory>
+  <memory unit='MiB'>{{ v_item.memory * 1024 }}</memory>
+  <currentMemory unit='MiB'>{{ v_item.memory * 1024 }}</currentMemory>
   <vcpu placement='static'>{{ v_item.cpus }}</vcpu>
   <resource>
     <partition>/machine</partition>
@@ -74,6 +74,7 @@
 {% else %}
     <emulator>/usr/libexec/qemu-kvm</emulator>
 {% endif %}
+    <watchdog model='itco' action='reset'/>
 {% for disk in v_item.disks %}{% set letters = 'abcdefghijklmnopqrstuvwxyz' %}
     <disk type='file' device='disk'>
       <driver name='qemu' type='qcow2' cache='writeback' iothread="1" queues="8"/>
@@ -112,9 +113,12 @@
       <address type='usb' bus='0' port='2'/>
     </input>
 {% else %}
+    <tpm model='tpm-crb'>
+      <backend type='emulator' version='2.0'/>
+    </tpm>
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
-      <source file='' index='1'/>
+      <source index='1'/>
       <backingStore/>
       <target dev='sda' bus='sata'/>
       <readonly/>
@@ -196,11 +200,11 @@
       <address type='pci' domain='0x0000' bus='0x04' slot='0x00' function='0x0'/>
     </controller>
 {% for iface in v_item.networks %}
-    <interface type='{{ iface.type | default('network') }}'>
+    <interface type='{{ iface.networkType | default('network') }}'>
 {% if iface.mac_address is defined %}
       <mac address='{{ iface.mac_address }}'/>
 {% endif %}
-      <source {{ iface.type | default('network') }}='{{ iface.name }}'/>
+      <source {{ iface.networkType | default('network') }}='{{ iface.name }}'/>
       <model type='{{ iface.model | default('virtio') }}'/>
       <alias name='{{ iface.name }}'/>
     </interface>

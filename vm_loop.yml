@@ -16,5 +16,6 @@
 - name: Define the VMs
   community.libvirt.virt:
     command: define
-    xml: "{{ templatingPath }}/{{ v_item.name }}.xml"
+    xml: "{{ lookup('template', 'templates/vm.xml.j2') }}"
+    #xml: "{{ templatingPath }}/{{ v_item.name }}.xml"
     uri: "{{ libvirt_uri }}"
