@@ -24,7 +24,7 @@ tlsKey = os.environ.get("FLASK_TLS_KEY", "")
 
 ##############################
 # Chopsticks Variables
-endpointMode = os.environ.get('CHOPSTICKS_ENDPOINT_MODE', 'subdirectory') # path, wildcard, or subdirectory
+endpointMode = os.environ.get('CHOPSTICKS_ENDPOINT_MODE', 'path') # path, wildcard, or subdirectory
 sushyToolsEndpoint = os.environ.get('SUSHY_TOOLS_ENDPOINT', 'http://sushy-tools.example.com:8111') # Default Sushy-tools endpoint
 
 ##############################
