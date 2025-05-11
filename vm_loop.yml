@@ -9,7 +9,7 @@
   ansible.builtin.command: "qemu-img create -f qcow2 -o preallocation=metadata,compat=1.1,lazy_refcounts=on {{ libvirt_base_vm_path | default('/var/lib/libvirt/images') }}/{{ v_item.name }}-{{ d_item.name }}.qcow2 {{ d_item.size }}G"
   args:
     creates: "{{ libvirt_base_vm_path | default('/var/lib/libvirt/images') }}/{{ v_item.name }}-{{ d_item.name }}.qcow2"
-  loop: "{{ v_item.disk }}"
+  loop: "{{ v_item.disks }}"
   loop_control:
     loop_var: d_item
 
