@@ -22,6 +22,7 @@
             size: 100
         networks:
           - name: bridge0
+            type: bridge
 
     vm_architecture: x86_64
     libvirt_host_os: fedora
