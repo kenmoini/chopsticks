@@ -53,4 +53,4 @@ podman run --rm -d --name chopsticks \
  quay.io/kenmoini/chopsticks:latest
 ```
 
-Yes, the container needs to be run as a root user - socket things.  Could probably be bypassed with a `qemu+ssh` connection.
+Yes, the container needs to be run as a root user - socket things.  Could probably be bypassed with a `qemu+ssh` connection with the `LIBVIRT_ENDPOINT` environment variable.
