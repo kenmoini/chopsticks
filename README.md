@@ -32,6 +32,7 @@ python3 -m pip install -r src/requirements.txt
 export SUSHY_TOOLS_ENDPOINT="http://sushy-tools.example.com:8111"
 
 # Export optional variables
+export CHOPSTICKS_ENDPOINT_MODE=path
 export FLASK_RUN_PORT=3434
 
 # Run the python server
@@ -45,6 +46,7 @@ python3 src/chopsticks.py
 podman run --rm -d --name chopsticks \
  -e SUSHY_TOOLS_ENDPOINT="http://sushy-tools.example.com:8111" \
  -e FLASK_RUN_PORT=3434 \
+ -e CHOPSTICKS_ENDPOINT_MODE=path \
  -p 3434/tcp \
  -v /var/run/libvirt:/var/run/libvirt:ro \
  quay.io/kenmoini/chopsticks:latest
