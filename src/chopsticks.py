@@ -35,6 +35,8 @@ managerPath = os.environ.get('MANAGER_PATH', '/redfish/v1/Managers/') # Default 
 chassisPath = os.environ.get('CHASSIS_PATH', '/redfish/v1/Chassis/') # Default chassis path
 idNumber = os.environ.get('ID_NUMBER', '1') # Default ID number
 
+redfishDefaultProxyPaths = ["redfish", "redfish/v1", "redfish/v1/Systems", "redfish/v1/Managers", "redfish/v1/Chassis", "redfish/v1/SessionService", "redfish/v1/SessionService/Sessions"]
+
 ##############################
 # creates a Flask application
 app = Flask(__name__)
@@ -80,7 +82,7 @@ def entrypoint(route):
         #print(f"Target VM: {targetVM} - {vmUUID}")
         # If we're not really doing anything then just proxy the request
         # Proxy base request
-        if path.strip("/") in ["redfish", "redfish/v1", "redfish/v1/Systems", "redfish/v1/Managers", "redfish/v1/Chassis"]:
+        if path.strip("/") in redfishDefaultProxyPaths:
             req = proxyRequest(sushyToolsEndpoint + "/" + path, requestMethod)
             sushyTransaction = sushyToolsReturnFilter(req, vmUUID, vmUUIDReplacement)
             return jsonify(json.loads(sushyTransaction)), req.status_code
@@ -106,7 +108,7 @@ def entrypoint(route):
         # If we're not really doing anything then just proxy the request
         remainingPath = path.split('/')[1:] if len(path.split('/')) > 1 else None
         remainingPath = '/'.join(remainingPath)
-        if remainingPath.strip("/") in ["redfish", "redfish/v1", "redfish/v1/Systems", "redfish/v1/Managers", "redfish/v1/Chassis"]:
+        if remainingPath.strip("/") in redfishDefaultProxyPaths:
             req = proxyRequest(sushyToolsEndpoint + "/" + remainingPath, requestMethod)
             sushyTransaction = sushyToolsReturnFilterSubdir(req, vmUUID, vmUUIDReplacement, targetVM)
             return jsonify(json.loads(sushyTransaction)), req.status_code
@@ -128,7 +130,7 @@ def entrypoint(route):
         # Get the VM
         vmInfo = getVMFromName(targetVM)
         if vmInfo is None:
-            if path.strip("/") in ["redfish", "redfish/v1", "redfish/v1/Systems", "redfish/v1/Managers", "redfish/v1/Chassis"]:
+            if path.strip("/") in redfishDefaultProxyPaths:
                 req = proxyRequest(sushyToolsEndpoint + "/" + path, requestMethod)
                 sushyTransaction = vmUUIDListingFilter(req)
                 return jsonify(json.loads(sushyTransaction)), req.status_code
