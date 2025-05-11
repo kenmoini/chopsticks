@@ -26,6 +26,7 @@
     vm_architecture: x86_64
     libvirt_host_os: fedora
     libvirt_firmware_mode: uefi
+    libvirt_uri: qemu:///system
 
   tasks:
     - name: Create the templatingPath
@@ -33,10 +34,8 @@
         path: "{{ templatingPath }}"
         state: directory
 
-    - name: Template the VM XML
-      ansible.builtin.template:
-        src: templates/vm.xml.j2
-        dest: "{{ templatingPath }}/{{ v_item.name }}.xml"
+    - name: Create the VMs
+      ansible.builtin.include_tasks: vm_loop.yml
       loop: "{{ vms }}"
       loop_control:
         loop_var: v_item
