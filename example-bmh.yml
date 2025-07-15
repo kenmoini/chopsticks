@@ -1,0 +1,91 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vbmh-user1
+
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: pull-secret
+  namespace: vbmh-user1
+data:
+  '.dockerconfigjson': 'ey...=='
+type: 'kubernetes.io/dockerconfigjson'
+
+---
+apiVersion: agent-install.openshift.io/v1beta1
+kind: InfraEnv
+metadata:
+  name: vbmh-user1
+  namespace: vbmh-user1
+  labels:
+    agentclusterinstalls.extensions.hive.openshift.io/location: loe-rdu
+    networkType: static
+spec:
+  agentLabels:
+    'agentclusterinstalls.extensions.hive.openshift.io/location': loe-rdu
+  pullSecretRef:
+    name: pull-secret
+  sshAuthorizedKey: ssh-rsa AAAA....
+  additionalNTPSources:
+    - ntp.kemo.labs
+  nmStateConfigLabelSelector:
+    matchLabels:
+      infraenvs.agent-install.openshift.io: vbmh-user1
+  cpuArchitecture: x86_64
+
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: capi-provider-role
+  namespace: vbmh-user1
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+rules:
+  - verbs:
+      - '*'
+    apiGroups:
+      - agent-install.openshift.io
+    resources:
+      - agents
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vbmh-user1-w1
+  namespace: vbmh-user1
+stringData:
+  # username/password doesn't matter, this is just a placeholder
+  # for the BMC credentials, which are not used in this example.
+  password: notAPasswordlol
+  username: notarealusername
+type: Opaque
+
+---
+apiVersion: metal3.io/v1alpha1
+kind: BareMetalHost
+metadata:
+  name: vbmh-user1-w1
+  namespace: vbmh-user1
+  labels:
+    infraenvs.agent-install.openshift.io: vbmh-user1
+  annotations:
+    inspect.metal3.io: disabled
+    bmac.agent-install.openshift.io/hostname: vbmh-user1-w1
+spec:
+  automatedCleaningMode: disabled
+  bmc:
+    disableCertificateVerification: true
+    credentialsName: vbmh-user1-w1
+    address: redfish-virtualmedia://chopsticks.apps.kemo.labs/redfish/v1/Systems/vbmh-user1-w1
+  # This is the MAC address of a non-BMC NIC
+  bootMACAddress: 52:54:00:63:d1:71
+  online: true
+  customDeploy:
+    method: start_assisted_install
+  rootDeviceHints:
+    deviceName: /dev/vda
